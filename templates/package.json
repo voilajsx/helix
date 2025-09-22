@@ -1,0 +1,60 @@
+{
+  "name": "helixapp",
+  "version": "1.0.0",
+  "description": "Full-stack FBCA application with UIKit frontend and AppKit backend",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "API_ONLY=true nodemon --exec tsx src/api/server.ts",
+    "dev:web": "cd src/web && vite",
+    "build": "npm run build:clean && npm run build:web && npm run build:api",
+    "build:clean": "rm -rf dist",
+    "build:web": "cd src/web && tsc && vite build --outDir ../../dist",
+    "build:api": "tsc --project tsconfig.api.json",
+    "start": "node dist/api/server.js",
+    "start:dev": "tsx src/api/server.ts",
+    "preview": "npm run build && npm run start",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:api": "eslint src/api --ext ts --report-unused-disable-directives --max-warnings 0",
+    "lint:web": "eslint src/web --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+  },
+  "keywords": [
+    "fullstack",
+    "react",
+    "express",
+    "fbca",
+    "uikit",
+    "appkit",
+    "helix"
+  ],
+  "dependencies": {
+    "@voilajsx/uikit": "latest",
+    "@voilajsx/appkit": "latest",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.1",
+    "lucide-react": "latest",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.22.0",
+    "@typescript-eslint/parser": "^8.22.0",
+    "@vitejs/plugin-react-swc": "^3.7.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.16",
+    "nodemon": "^3.1.9",
+    "tsx": "^4.20.5",
+    "typescript": "^5.7.2",
+    "vite": "^6.3.6"
+  }
+}

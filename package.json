@@ -1,0 +1,57 @@
+{
+  "name": "@voilajsx/helix",
+  "version": "1.0.0",
+  "description": "A modern fullstack framework combining UIKit (React) and AppKit (Express) with Feature-Based Component Architecture (FBCA)",
+  "type": "module",
+  "main": "./bin/helix.js",
+  "bin": {
+    "helix": "./bin/helix.js"
+  },
+  "files": [
+    "bin",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voilajsx/helix.git"
+  },
+  "homepage": "https://github.com/voilajsx/helix#readme",
+  "bugs": {
+    "url": "https://github.com/voilajsx/helix/issues"
+  },
+  "keywords": [
+    "fullstack",
+    "framework",
+    "fbca",
+    "feature-based",
+    "component-architecture",
+    "uikit",
+    "appkit",
+    "react",
+    "express",
+    "cli",
+    "scaffolding",
+    "typescript",
+    "vite",
+    "auto-discovery",
+    "routing",
+    "zero-config"
+  ],
+  "author": {
+    "name": "VoilaJSX",
+    "url": "https://voilajsx.com"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "fs-extra": "^11.2.0"
+  },
+  "peerDependencies": {
+    "@voilajsx/uikit": ">=1.2.0",
+    "@voilajsx/appkit": ">=1.0.0"
+  }
+}
