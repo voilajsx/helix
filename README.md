@@ -162,21 +162,31 @@ const StatusCheck = () => {
 
 ## 📜 Available Scripts
 
-### Development
+### Development Workflows
 
 ```bash
-npm run dev        # Start both frontend and backend
-npm run dev:api    # Start only backend (Express on port 3000)
-npm run dev:web    # Start only frontend (Vite on port 5173)
+# Option 1: Separate development (recommended for most development)
+npm run dev          # API (3000) + Web (5173) - separate ports with colored logs
+npm run dev:api      # Backend only (Express on port 3000)
+npm run dev:web      # Frontend only (Vite on port 5173)
+
+# Option 2: Unified development (for testing integration)
+npm run dev:fullstack # Build frontend + serve through backend (single port)
 ```
 
 ### Production
 
 ```bash
 npm run build      # Build both frontend and backend
-npm start          # Start production server
+npm start          # Start production server (checks build exists)
 npm run preview    # Build and preview
 ```
+
+### Development Tips
+
+- **npm run dev**: Best for regular development - API and Web run separately with clear labels
+- **npm run dev:fullstack**: Use when testing full integration or APIs from frontend
+- **npm start**: Now shows helpful error if you forgot to build first
 
 ### Linting
 

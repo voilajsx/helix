@@ -74,15 +74,16 @@ async function mergeHelixPackageJson() {
 
     // Add/override fullstack scripts
     const helixScripts = {
-      dev: 'concurrently "npm run dev:api" "npm run dev:web"',
-      'dev:api': 'API_ONLY=true nodemon --exec tsx src/api/server.ts',
-      'dev:web': 'cd src/web && vite',
+      dev: 'concurrently --names "API,WEB" --prefix-colors "blue,green" "npm run dev:api" "npm run dev:web"',
+      'dev:api': 'API_ONLY=true NODE_ENV=development nodemon --exec tsx src/api/server.ts',
+      'dev:web': 'cd src/web && vite --host',
+      'dev:fullstack': 'npm run build:web && npm run start:dev',
       build: 'npm run build:clean && npm run build:web && npm run build:api',
       'build:clean': 'rm -rf dist',
       'build:web': 'cd src/web && tsc && vite build --outDir ../../dist',
       'build:api': 'tsc --project tsconfig.api.json',
-      start: 'node dist/api/server.js',
-      'start:dev': 'tsx src/api/server.ts',
+      start: 'node -e "if(!require(\'fs\').existsSync(\'./dist/api/server.js\')){console.error(\'❌ Build required: run npm run build first\');process.exit(1)}" && node dist/api/server.js',
+      'start:dev': 'NODE_ENV=development tsx src/api/server.ts',
       preview: 'npm run build && npm run start',
       'lint:api':
         'eslint src/api --ext ts --report-unused-disable-directives --max-warnings 0',
@@ -202,14 +203,18 @@ if (command === 'create') {
       console.log(`
 ✅ Helix installed successfully in current directory!
 
-Development:
-  npm run dev        # Start both frontend and backend
-  npm run dev:api    # Start only backend (Express)
-  npm run dev:web    # Start only frontend (Vite)
+🚀 Development (Choose your workflow):
+  npm run dev          # Both API (3000) + Web (5173) - separate ports
+  npm run dev:api      # Backend only (Express on port 3000)
+  npm run dev:web      # Frontend only (Vite on port 5173)
+  npm run dev:fullstack # Unified experience (build + serve through backend)
 
-Production:
-  npm run build      # Build both frontend and backend
-  npm start          # Start production server
+📦 Production:
+  npm run build        # Build both frontend and backend
+  npm start            # Start production server
+  npm run preview      # Build and preview
+
+🎯 Pro tip: Use "npm run dev" for most development, "dev:fullstack" for testing integration
 `);
     } else {
       console.log(`
@@ -218,14 +223,18 @@ Production:
 Next steps:
   cd ${projectName}
 
-Development:
-  npm run dev        # Start both frontend and backend
-  npm run dev:api    # Start only backend (Express)
-  npm run dev:web    # Start only frontend (Vite)
+🚀 Development (Choose your workflow):
+  npm run dev          # Both API (3000) + Web (5173) - separate ports
+  npm run dev:api      # Backend only (Express on port 3000)
+  npm run dev:web      # Frontend only (Vite on port 5173)
+  npm run dev:fullstack # Unified experience (build + serve through backend)
 
-Production:
-  npm run build      # Build both frontend and backend
-  npm start          # Start production server
+📦 Production:
+  npm run build        # Build both frontend and backend
+  npm start            # Start production server
+  npm run preview      # Build and preview
+
+🎯 Pro tip: Use "npm run dev" for most development, "dev:fullstack" for testing integration
 `);
     }
   } catch (error) {
