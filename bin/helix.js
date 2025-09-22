@@ -12,6 +12,8 @@ import {
   mkdirSync,
   readFileSync,
   writeFileSync,
+  readdirSync,
+  statSync,
 } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +23,7 @@ const __dirname = dirname(__filename);
 
 const command = process.argv[2];
 const projectName = process.argv[3];
+const templateType = process.argv[4] || 'basicapp'; // Default to basicapp
 
 /**
  * Convert CommonJS package.json to ESM module
@@ -29,10 +32,82 @@ function convertToESM(packageObj) {
   // Convert type to module if it's commonjs or missing
   if (!packageObj.type || packageObj.type === 'commonjs') {
     packageObj.type = 'module';
-    console.log('🔄 Converting package.json from CommonJS to ESM');
+    // Silently convert - will be included in "Configuring fullstack integration" message
   }
 
   return packageObj;
+}
+
+/**
+ * Copy Helix template files to the generated project
+ */
+function copyHelixTemplate(templateType) {
+  try {
+    const templatePath = join(__dirname, '../templates', templateType);
+
+    if (!existsSync(templatePath)) {
+      console.error(`❌ Template "${templateType}" not found at ${templatePath}`);
+      return;
+    }
+
+    // Recursively copy template files, processing .template files
+    function copyRecursive(sourcePath, destPath) {
+      const items = readdirSync(sourcePath);
+
+      for (const item of items) {
+        const sourceItem = join(sourcePath, item);
+        const stat = statSync(sourceItem);
+
+        if (stat.isDirectory()) {
+          const destItem = join(destPath, item);
+          if (!existsSync(destItem)) {
+            mkdirSync(destItem, { recursive: true });
+          }
+          copyRecursive(sourceItem, destItem);
+        } else if (stat.isFile()) {
+          // Handle .template files
+          if (item.endsWith('.template')) {
+            const destItem = join(destPath, item.replace('.template', ''));
+            copyFileSync(sourceItem, destItem);
+          } else {
+            const destItem = join(destPath, item);
+            copyFileSync(sourceItem, destItem);
+          }
+        }
+      }
+    }
+
+    copyRecursive(templatePath, './');
+    console.log('📋 Applied Helix template files');
+
+  } catch (error) {
+    console.error('❌ Error copying template files:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Add VITE_API_URL to .env file for frontend API configuration
+ */
+function addViteApiUrl() {
+  try {
+    const envPath = './.env';
+
+    // Check if .env exists
+    if (existsSync(envPath)) {
+      let envContent = readFileSync(envPath, 'utf8');
+
+      // Check if VITE_API_URL already exists
+      if (!envContent.includes('VITE_API_URL')) {
+        // Add VITE_API_URL to the end of the file
+        envContent += '\n# Frontend API Configuration\nVITE_API_URL=http://localhost:3000\n';
+        writeFileSync(envPath, envContent);
+      }
+    }
+  } catch (error) {
+    console.error('⚠️  Could not add VITE_API_URL to .env:', error.message);
+    // Don't throw - this is not critical
+  }
 }
 
 /**
@@ -114,31 +189,34 @@ async function mergeHelixPackageJson() {
       './package.json',
       JSON.stringify(existingPackage, null, 2) + '\n'
     );
-    console.log(
-      '✅ Updated package.json with fullstack scripts and dependencies'
-    );
+    // Success is implied by the "Configuring fullstack integration" message
   } catch (error) {
-    console.warn(
-      '⚠️ Warning: Could not merge Helix package.json template:',
+    console.error(
+      '❌ Error configuring fullstack integration:',
       error.message
     );
+    throw error; // Re-throw to be caught by main try-catch
   }
 }
 
 if (!command) {
   console.log(`
-🔥 Helix Framework - Fullstack FBCA
+🔥 Helix Framework - Fullstack Apps
 
 Usage:
-  helix create <project-name>  Create new fullstack project
-  helix create .               Install in current directory
+  helix create <project-name> [template]  Create new fullstack project
+  helix create . [template]               Install in current directory
 
-Commands:
-  create    Scaffold new fullstack app with UIKit + AppKit
+Templates:
+  basicapp    Basic app with routing and features (default)
+  welcomeapp  Landing page focused app (coming soon)
+  userapp     User management app (coming soon)
+  todoapp     Todo application (coming soon)
 
 Examples:
-  helix create my-app          # Create new project in my-app/ directory
-  helix create .               # Install in current directory
+  helix create my-app                    # Create basicapp in my-app/ directory
+  helix create my-app basicapp           # Same as above
+  helix create . basicapp                # Install basicapp in current directory
 `);
   process.exit(1);
 }
@@ -151,17 +229,31 @@ if (command === 'create') {
     process.exit(1);
   }
 
+  // Validate template type
+  const validTemplates = ['basicapp', 'welcomeapp', 'userapp', 'todoapp'];
+  if (!validTemplates.includes(templateType)) {
+    console.error(`❌ Invalid template "${templateType}". Available templates: ${validTemplates.join(', ')}`);
+    process.exit(1);
+  }
+
+  // Check if template exists
+  const templatePath = join(__dirname, '../templates', templateType);
+  if (!existsSync(templatePath)) {
+    console.error(`❌ Template "${templateType}" is not yet available. Currently available: basicapp`);
+    process.exit(1);
+  }
+
   const isCurrentDir = projectName === '.';
 
   if (isCurrentDir) {
-    console.log(`🚀 Installing Helix in current directory`);
+    console.log(`🚀 Installing Helix ${templateType} in current directory`);
 
     // Check if current directory has package.json and warn about overwrite
     if (existsSync('./package.json')) {
       console.log('📦 Found existing package.json - will merge with Helix configuration');
     }
   } else {
-    console.log(`🚀 Creating Helix project: ${projectName}`);
+    console.log(`🚀 Creating Helix ${templateType} project: ${projectName}`);
 
     try {
       // Create project directory
@@ -179,62 +271,57 @@ if (command === 'create') {
   }
 
   try {
-    console.log('📱 Installing UIKit with FBCA template...');
+    console.log('📱 Setting up frontend (UIKit)...');
 
-    // Install UIKit globally and create FBCA frontend
-    execSync('npm install -g @voilajsx/uikit', { stdio: 'inherit' });
-    execSync('uikit create . --fbca --theme base', { stdio: 'inherit' });
+    // Install UIKit globally and create FBCA frontend (suppress output)
+    execSync('npm install -g @voilajsx/uikit > /dev/null 2>&1 || npm install -g @voilajsx/uikit', { stdio: 'pipe' });
+    execSync('uikit create . --fbca --theme base', { stdio: 'pipe' });
 
-    console.log('🔧 Installing AppKit and creating backend...');
+    console.log('🔧 Setting up backend (AppKit)...');
 
-    // Install AppKit globally and create backend
-    execSync('npm install -g @voilajsx/appkit', { stdio: 'inherit' });
-    execSync('appkit generate app', { stdio: 'inherit' });
+    // Install AppKit globally and create backend (suppress output)
+    execSync('npm install -g @voilajsx/appkit > /dev/null 2>&1 || npm install -g @voilajsx/appkit', { stdio: 'pipe' });
+    execSync('appkit generate app', { stdio: 'pipe' });
 
-    console.log('🔧 Updating package.json with fullstack scripts...');
+    console.log('🔄 Configuring fullstack integration...');
 
     // Now merge the Helix fullstack template with the generated package.json
     await mergeHelixPackageJson();
 
     console.log('🎉 Installing dependencies...');
-    execSync('npm install', { stdio: 'inherit' });
+    execSync('npm install', { stdio: 'pipe' });
+
+    // Copy Helix template files to override UIKit defaults (after install)
+    copyHelixTemplate(templateType);
+
+    // Add VITE_API_URL to .env for frontend API configuration
+    addViteApiUrl();
 
     if (isCurrentDir) {
       console.log(`
-✅ Helix installed successfully in current directory!
+✅ Helix ${templateType} installed successfully!
 
-🚀 Development (Choose your workflow):
-  npm run dev          # Both API (3000) + Web (5173) - separate ports
-  npm run dev:api      # Backend only (Express on port 3000)
-  npm run dev:web      # Frontend only (Vite on port 5173)
-  npm run dev:fullstack # Unified experience (build + serve through backend)
+🚀 Development:
+  npm run dev          # Both API (3000) + Web (5173)
+  npm run dev:api      # Backend only
+  npm run dev:web      # Frontend only
+  npm run dev:fullstack # Unified experience
 
-📦 Production:
-  npm run build        # Build both frontend and backend
-  npm start            # Start production server
-  npm run preview      # Build and preview
-
-🎯 Pro tip: Use "npm run dev" for most development, "dev:fullstack" for testing integration
+💡 Run "npm run dev" to get started!
 `);
     } else {
       console.log(`
-✅ Project ${projectName} created successfully!
+✅ Helix ${templateType} project ${projectName} created successfully!
 
 Next steps:
   cd ${projectName}
+  npm run dev
 
-🚀 Development (Choose your workflow):
-  npm run dev          # Both API (3000) + Web (5173) - separate ports
-  npm run dev:api      # Backend only (Express on port 3000)
-  npm run dev:web      # Frontend only (Vite on port 5173)
-  npm run dev:fullstack # Unified experience (build + serve through backend)
-
-📦 Production:
-  npm run build        # Build both frontend and backend
-  npm start            # Start production server
-  npm run preview      # Build and preview
-
-🎯 Pro tip: Use "npm run dev" for most development, "dev:fullstack" for testing integration
+🚀 Development options:
+  npm run dev          # Both API (3000) + Web (5173)
+  npm run dev:api      # Backend only
+  npm run dev:web      # Frontend only
+  npm run dev:fullstack # Unified experience
 `);
     }
   } catch (error) {

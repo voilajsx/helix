@@ -1,0 +1,43 @@
+import React from 'react';
+import { Button } from '@voilajsx/uikit/button';
+import { ArrowRight } from 'lucide-react';
+
+interface CTASectionProps {
+  title: string;
+  description: string;
+  primaryAction: string;
+  secondaryAction: string;
+  onPrimaryClick: () => void;
+  onSecondaryClick: () => void;
+}
+
+export const CTASection: React.FC<CTASectionProps> = ({
+  title,
+  description,
+  primaryAction,
+  secondaryAction,
+  onPrimaryClick,
+  onSecondaryClick,
+}) => {
+  return (
+    <section className="text-center py-16 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 rounded-lg">
+      <div className="space-y-6">
+        <h2 className="text-3xl md:text-4xl font-bold text-gradient-primary">
+          {title}
+        </h2>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          {description}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+          <Button size="lg" onClick={onPrimaryClick}>
+            {primaryAction}
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="lg" onClick={onSecondaryClick}>
+            {secondaryAction}
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+};

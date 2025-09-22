@@ -1,0 +1,74 @@
+/**
+ * Gallery Hook
+ * Manages random image loading from Picsum Photos API
+ */
+
+import { useState, useEffect, useCallback } from 'react';
+
+interface GalleryImage {
+  id: string;
+  url: string;
+  downloadUrl: string;
+  width: number;
+  height: number;
+}
+
+interface UseGalleryResult {
+  images: GalleryImage[];
+  loading: boolean;
+  error: string | null;
+  refreshImages: () => void;
+}
+
+export const useGallery = (count: number = 6): UseGalleryResult => {
+  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadImages = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const imagePromises = Array.from({ length: count }, async (_, index) => {
+        const width = 300 + Math.floor(Math.random() * 100); // 300-400px width
+        const height = 200 + Math.floor(Math.random() * 100); // 200-300px height
+        const imageId = Math.floor(Math.random() * 1000) + index;
+
+        const url = `https://picsum.photos/${width}/${height}?random=${imageId}`;
+        const downloadUrl = `https://picsum.photos/${width}/${height}?random=${imageId}`;
+
+        return {
+          id: imageId.toString(),
+          url,
+          downloadUrl,
+          width,
+          height
+        };
+      });
+
+      const newImages = await Promise.all(imagePromises);
+      setImages(newImages);
+    } catch (err) {
+      setError('Failed to load images. Please try again.');
+      console.error('Gallery loading error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [count]);
+
+  const refreshImages = useCallback(() => {
+    loadImages();
+  }, [loadImages]);
+
+  useEffect(() => {
+    loadImages();
+  }, [loadImages]);
+
+  return {
+    images,
+    loading,
+    error,
+    refreshImages
+  };
+};

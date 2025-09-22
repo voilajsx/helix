@@ -1,0 +1,83 @@
+/**
+ * Catch-All Route Example - /docs/*
+ * Handles any path under /docs/ with unlimited nesting
+ */
+
+import { useParams } from 'react-router-dom';
+import { useSEO } from '@/shared/hooks/useSEO';
+import { Header } from '@/shared/components/Header';
+import { Footer } from '@/shared/components/Footer';
+
+export default function DocsPage() {
+  const { '*': catchAll } = useParams();
+  const paths = catchAll?.split('/').filter(Boolean) || [];
+
+  useSEO({
+    title: paths.length > 0 ? `Docs: ${paths.join(' / ')}` : 'Documentation',
+    description: `Documentation for ${paths.join(' and ')}`,
+    keywords: 'documentation, guides, help, fbca, features',
+  });
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+
+      <main className="max-w-4xl mx-auto px-4 py-12">
+        <div className="space-y-8">
+          <div className="text-center">
+            <h1 className="voila-heading text-4xl mb-4">Documentation</h1>
+            <p className="voila-subheading text-muted-foreground">
+              {paths.length > 0
+                ? `Showing docs for: ${paths.join(' → ')}`
+                : 'Browse our comprehensive documentation'
+              }
+            </p>
+          </div>
+
+          {paths.length > 0 ? (
+            <div className="bg-card border border-border rounded-lg p-6">
+              <h2 className="text-2xl font-bold text-foreground mb-4">Navigation Path</h2>
+              <div className="space-y-3">
+                {paths.map((path, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 text-foreground"
+                  >
+                    <span className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium">
+                      {index + 1}
+                    </span>
+                    <span className="capitalize font-medium">{path.replace('-', ' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-card border border-border rounded-lg p-6">
+                <h3 className="text-xl font-bold text-foreground mb-3">Getting Started</h3>
+                <p className="text-muted-foreground mb-4">
+                  Learn the basics of using our platform
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  Try: /docs/getting-started/installation
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg p-6">
+                <h3 className="text-xl font-bold text-foreground mb-3">API Reference</h3>
+                <p className="text-muted-foreground mb-4">
+                  Complete API documentation and examples
+                </p>
+                <div className="text-sm text-muted-foreground">
+                  Try: /docs/api/authentication
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
