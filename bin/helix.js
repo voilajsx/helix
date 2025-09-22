@@ -23,16 +23,36 @@ const command = process.argv[2];
 const projectName = process.argv[3];
 
 /**
+ * Convert CommonJS package.json to ESM module
+ */
+function convertToESM(packageObj) {
+  // Convert type to module if it's commonjs or missing
+  if (!packageObj.type || packageObj.type === 'commonjs') {
+    packageObj.type = 'module';
+    console.log('🔄 Converting package.json from CommonJS to ESM');
+  }
+
+  return packageObj;
+}
+
+/**
  * Merge Helix fullstack package.json template with existing package.json
  */
 async function mergeHelixPackageJson() {
   try {
     // Read existing package.json (created by UIKit/AppKit)
-    const existingPackage = JSON.parse(readFileSync('./package.json', 'utf8'));
+    let existingPackage = JSON.parse(readFileSync('./package.json', 'utf8'));
+
+    // Convert to ESM if needed
+    existingPackage = convertToESM(existingPackage);
 
     // Read Helix template package.json
     const templatePath = join(__dirname, '../templates/package.json');
     const helixTemplate = JSON.parse(readFileSync(templatePath, 'utf8'));
+
+    // Ensure dependencies object exists
+    if (!existingPackage.dependencies) existingPackage.dependencies = {};
+    if (!existingPackage.devDependencies) existingPackage.devDependencies = {};
 
     // Merge missing dependencies
     for (const [dep, version] of Object.entries(
@@ -69,6 +89,9 @@ async function mergeHelixPackageJson() {
       'lint:web':
         'eslint src/web --ext ts,tsx --report-unused-disable-directives --max-warnings 0',
     };
+
+    // Ensure scripts object exists
+    if (!existingPackage.scripts) existingPackage.scripts = {};
 
     // Add/override Helix scripts
     for (const [script, command] of Object.entries(helixScripts)) {
@@ -107,12 +130,14 @@ if (!command) {
 
 Usage:
   helix create <project-name>  Create new fullstack project
+  helix create .               Install in current directory
 
 Commands:
   create    Scaffold new fullstack app with UIKit + AppKit
 
-Example:
-  helix create my-app
+Examples:
+  helix create my-app          # Create new project in my-app/ directory
+  helix create .               # Install in current directory
 `);
   process.exit(1);
 }
@@ -120,23 +145,39 @@ Example:
 if (command === 'create') {
   if (!projectName) {
     console.error(
-      '❌ Please provide a project name: helix create <project-name>'
+      '❌ Please provide a project name or "." for current directory: helix create <project-name>'
     );
     process.exit(1);
   }
 
-  console.log(`🚀 Creating Helix project: ${projectName}`);
+  const isCurrentDir = projectName === '.';
 
-  try {
-    // Create project directory
-    if (existsSync(projectName)) {
-      console.error(`❌ Directory ${projectName} already exists`);
+  if (isCurrentDir) {
+    console.log(`🚀 Installing Helix in current directory`);
+
+    // Check if current directory has package.json and warn about overwrite
+    if (existsSync('./package.json')) {
+      console.log('📦 Found existing package.json - will merge with Helix configuration');
+    }
+  } else {
+    console.log(`🚀 Creating Helix project: ${projectName}`);
+
+    try {
+      // Create project directory
+      if (existsSync(projectName)) {
+        console.error(`❌ Directory ${projectName} already exists`);
+        process.exit(1);
+      }
+
+      mkdirSync(projectName);
+      process.chdir(projectName);
+    } catch (error) {
+      console.error('❌ Error creating project directory:', error.message);
       process.exit(1);
     }
+  }
 
-    mkdirSync(projectName);
-    process.chdir(projectName);
-
+  try {
     console.log('📱 Installing UIKit with FBCA template...');
 
     // Install UIKit globally and create FBCA frontend
@@ -157,7 +198,21 @@ if (command === 'create') {
     console.log('🎉 Installing dependencies...');
     execSync('npm install', { stdio: 'inherit' });
 
-    console.log(`
+    if (isCurrentDir) {
+      console.log(`
+✅ Helix installed successfully in current directory!
+
+Development:
+  npm run dev        # Start both frontend and backend
+  npm run dev:api    # Start only backend (Express)
+  npm run dev:web    # Start only frontend (Vite)
+
+Production:
+  npm run build      # Build both frontend and backend
+  npm start          # Start production server
+`);
+    } else {
+      console.log(`
 ✅ Project ${projectName} created successfully!
 
 Next steps:
@@ -172,6 +227,7 @@ Production:
   npm run build      # Build both frontend and backend
   npm start          # Start production server
 `);
+    }
   } catch (error) {
     console.error('❌ Error creating project:', error.message);
     process.exit(1);

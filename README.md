@@ -27,8 +27,14 @@ npm install -g @voilajsx/helix
 ### Create New Project
 
 ```bash
+# Create in new directory
 helix create my-app
 cd my-app
+npm run dev
+
+# Or install in current directory
+mkdir my-project && cd my-project
+helix create .
 npm run dev
 ```
 
