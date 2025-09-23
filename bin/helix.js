@@ -24,6 +24,7 @@ const __dirname = dirname(__filename);
 const command = process.argv[2];
 const projectName = process.argv[3];
 const templateType = process.argv[4] || 'basicapp'; // Default to basicapp
+const verbose = process.argv.includes('--verbose');
 
 /**
  * Convert CommonJS package.json to ESM module
@@ -41,14 +42,17 @@ function convertToESM(packageObj) {
 /**
  * Copy Helix template files to the generated project
  */
-function copyHelixTemplate(templateType) {
+function copyHelixTemplate(templateType, verbose = false) {
   try {
     const templatePath = join(__dirname, '../templates', templateType);
+    if (verbose) console.log(`🔍 [DEBUG] Template path: ${templatePath}`);
 
     if (!existsSync(templatePath)) {
       console.error(`❌ Template "${templateType}" not found at ${templatePath}`);
       return;
     }
+
+    let filesCopied = 0;
 
     // Recursively copy template files, processing .template files
     function copyRecursive(sourcePath, destPath) {
@@ -62,16 +66,27 @@ function copyHelixTemplate(templateType) {
           const destItem = join(destPath, item);
           if (!existsSync(destItem)) {
             mkdirSync(destItem, { recursive: true });
+            if (verbose) console.log(`🔍 [DEBUG] Created directory: ${destItem}`);
           }
           copyRecursive(sourceItem, destItem);
         } else if (stat.isFile()) {
+          // Skip package.json files to preserve merged version
+          if (item === 'package.json' || item === 'package.json.template') {
+            if (verbose) console.log(`🔍 [DEBUG] Skipped ${item} to preserve merged package.json`);
+            return;
+          }
+
           // Handle .template files
           if (item.endsWith('.template')) {
             const destItem = join(destPath, item.replace('.template', ''));
             copyFileSync(sourceItem, destItem);
+            filesCopied++;
+            if (verbose) console.log(`🔍 [DEBUG] Copied template file: ${item} -> ${item.replace('.template', '')}`);
           } else {
             const destItem = join(destPath, item);
             copyFileSync(sourceItem, destItem);
+            filesCopied++;
+            if (verbose) console.log(`🔍 [DEBUG] Copied file: ${item}`);
           }
         }
       }
@@ -79,9 +94,11 @@ function copyHelixTemplate(templateType) {
 
     copyRecursive(templatePath, './');
     console.log('📋 Applied Helix template files');
+    if (verbose) console.log(`🔍 [DEBUG] Total files copied: ${filesCopied}`);
 
   } catch (error) {
     console.error('❌ Error copying template files:', error.message);
+    if (verbose) console.error('🔍 [DEBUG] Full error:', error);
     throw error;
   }
 }
@@ -113,66 +130,69 @@ function addViteApiUrl() {
 /**
  * Merge Helix fullstack package.json template with existing package.json
  */
-async function mergeHelixPackageJson() {
+async function mergeHelixPackageJson(verbose = false) {
   try {
+    if (verbose) console.log('🔍 [DEBUG] Starting package.json merge...');
+
     // Read existing package.json (created by UIKit/AppKit)
+    if (verbose) console.log('🔍 [DEBUG] Reading existing package.json...');
     let existingPackage = JSON.parse(readFileSync('./package.json', 'utf8'));
+    if (verbose) console.log('🔍 [DEBUG] Existing package name:', existingPackage.name);
+    if (verbose) console.log('🔍 [DEBUG] Existing scripts:', Object.keys(existingPackage.scripts || {}));
 
     // Convert to ESM if needed
     existingPackage = convertToESM(existingPackage);
+    if (verbose) console.log('🔍 [DEBUG] ESM conversion completed, type:', existingPackage.type);
 
     // Read Helix template package.json
     const templatePath = join(__dirname, '../templates/package.json');
+    if (verbose) console.log('🔍 [DEBUG] Reading Helix template from:', templatePath);
     const helixTemplate = JSON.parse(readFileSync(templatePath, 'utf8'));
+    if (verbose) console.log('🔍 [DEBUG] Template scripts:', Object.keys(helixTemplate.scripts || {}));
+    if (verbose) console.log('🔍 [DEBUG] Template dependencies:', Object.keys(helixTemplate.dependencies || {}));
 
     // Ensure dependencies object exists
     if (!existingPackage.dependencies) existingPackage.dependencies = {};
     if (!existingPackage.devDependencies) existingPackage.devDependencies = {};
 
     // Merge missing dependencies
+    let addedDeps = 0;
     for (const [dep, version] of Object.entries(
       helixTemplate.dependencies || {}
     )) {
       if (!existingPackage.dependencies[dep]) {
         existingPackage.dependencies[dep] = version;
+        addedDeps++;
+        if (verbose) console.log(`🔍 [DEBUG] Added dependency: ${dep}@${version}`);
       }
     }
+    if (verbose) console.log(`🔍 [DEBUG] Added ${addedDeps} new dependencies`);
 
     // Merge missing devDependencies
+    let addedDevDeps = 0;
     for (const [dep, version] of Object.entries(
       helixTemplate.devDependencies || {}
     )) {
       if (!existingPackage.devDependencies[dep]) {
         existingPackage.devDependencies[dep] = version;
+        addedDevDeps++;
+        if (verbose) console.log(`🔍 [DEBUG] Added devDependency: ${dep}@${version}`);
       }
     }
-
-    // Add/override fullstack scripts
-    const helixScripts = {
-      dev: 'concurrently --names "API,WEB" --prefix-colors "blue,green" "npm run dev:api" "npm run dev:web"',
-      'dev:api': 'API_ONLY=true NODE_ENV=development nodemon --exec tsx src/api/server.ts',
-      'dev:web': 'cd src/web && vite --host',
-      'dev:fullstack': 'npm run build:web && npm run start:dev',
-      build: 'npm run build:clean && npm run build:web && npm run build:api',
-      'build:clean': 'rm -rf dist',
-      'build:web': 'cd src/web && tsc && vite build --outDir ../../dist',
-      'build:api': 'tsc --project tsconfig.api.json',
-      start: 'node -e "if(!require(\'fs\').existsSync(\'./dist/api/server.js\')){console.error(\'❌ Build required: run npm run build first\');process.exit(1)}" && node dist/api/server.js',
-      'start:dev': 'NODE_ENV=development tsx src/api/server.ts',
-      preview: 'npm run build && npm run start',
-      'lint:api':
-        'eslint src/api --ext ts --report-unused-disable-directives --max-warnings 0',
-      'lint:web':
-        'eslint src/web --ext ts,tsx --report-unused-disable-directives --max-warnings 0',
-    };
+    if (verbose) console.log(`🔍 [DEBUG] Added ${addedDevDeps} new devDependencies`);
 
     // Ensure scripts object exists
     if (!existingPackage.scripts) existingPackage.scripts = {};
 
-    // Add/override Helix scripts
-    for (const [script, command] of Object.entries(helixScripts)) {
+    // Add/override Helix scripts from template
+    let addedScripts = 0;
+    for (const [script, command] of Object.entries(helixTemplate.scripts || {})) {
+      const wasOverride = !!existingPackage.scripts[script];
       existingPackage.scripts[script] = command;
+      addedScripts++;
+      if (verbose) console.log(`🔍 [DEBUG] ${wasOverride ? 'Overrode' : 'Added'} script: ${script}`);
     }
+    if (verbose) console.log(`🔍 [DEBUG] Processed ${addedScripts} scripts`);
 
     // Update description to reflect fullstack nature
     existingPackage.description =
@@ -185,16 +205,20 @@ async function mergeHelixPackageJson() {
     }
 
     // Write updated package.json
+    if (verbose) console.log('🔍 [DEBUG] Writing updated package.json...');
     writeFileSync(
       './package.json',
       JSON.stringify(existingPackage, null, 2) + '\n'
     );
+    if (verbose) console.log('🔍 [DEBUG] Package.json merge completed successfully');
+
     // Success is implied by the "Configuring fullstack integration" message
   } catch (error) {
     console.error(
       '❌ Error configuring fullstack integration:',
       error.message
     );
+    if (verbose) console.error('🔍 [DEBUG] Full error:', error);
     throw error; // Re-throw to be caught by main try-catch
   }
 }
@@ -272,28 +296,50 @@ if (command === 'create') {
 
   try {
     console.log('📱 Setting up frontend (UIKit)...');
+    if (verbose) console.log('🔍 [DEBUG] Running: npx @voilajsx/uikit@latest create . --fbca --theme base');
 
     // Use npx instead of global install to avoid npm conflicts
-    execSync('npx @voilajsx/uikit@latest create . --fbca --theme base', { stdio: 'pipe' });
+    execSync('npx @voilajsx/uikit@latest create . --fbca --theme base', { stdio: verbose ? 'inherit' : 'pipe' });
+    if (verbose) console.log('🔍 [DEBUG] UIKit setup completed');
 
     console.log('🔧 Setting up backend (AppKit)...');
+    if (verbose) console.log('🔍 [DEBUG] Running: npx @voilajsx/appkit@latest generate app');
 
     // Use npx instead of global install to avoid npm conflicts
-    execSync('npx @voilajsx/appkit@latest generate app', { stdio: 'pipe' });
+    execSync('npx @voilajsx/appkit@latest generate app', { stdio: verbose ? 'inherit' : 'pipe' });
+    if (verbose) console.log('🔍 [DEBUG] AppKit setup completed');
 
     console.log('🔄 Configuring fullstack integration...');
 
     // Now merge the Helix fullstack template with the generated package.json
-    await mergeHelixPackageJson();
+    await mergeHelixPackageJson(verbose);
 
     console.log('🎉 Installing dependencies...');
-    execSync('npm install', { stdio: 'pipe' });
+    if (verbose) console.log('🔍 [DEBUG] Running: npm install');
+    execSync('npm install', { stdio: verbose ? 'inherit' : 'pipe' });
+    if (verbose) console.log('🔍 [DEBUG] Dependencies installed');
 
     // Copy Helix template files to override UIKit defaults (after install)
-    copyHelixTemplate(templateType);
+    if (verbose) console.log('🔍 [DEBUG] Copying Helix template files...');
+    copyHelixTemplate(templateType, verbose);
 
     // Add VITE_API_URL to .env for frontend API configuration
+    if (verbose) console.log('🔍 [DEBUG] Adding VITE_API_URL to .env...');
     addViteApiUrl();
+
+    // Clean up unnecessary directories for basicapp
+    if (templateType === 'basicapp') {
+      if (verbose) console.log('🔍 [DEBUG] Cleaning up unnecessary directories...');
+      try {
+        if (existsSync('./src/utils') && readdirSync('./src/utils').length === 0) {
+          execSync('rmdir src/utils', { stdio: 'pipe' });
+          if (verbose) console.log('🔍 [DEBUG] Removed empty src/utils directory');
+        }
+      } catch (error) {
+        // Ignore cleanup errors
+        if (verbose) console.log('🔍 [DEBUG] Utils directory cleanup skipped:', error.message);
+      }
+    }
 
     if (isCurrentDir) {
       console.log(`
