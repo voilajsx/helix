@@ -1,7 +1,7 @@
 /**
  * FBCA Backend API Server with AppKit integration
- * @module basicapp-test/server
- * @file basicapp-test/src/api/server.ts
+ * @module {{projectName}}/server
+ * @file {{projectName}}/src/api/server.ts
  *
  * @llm-rule WHEN: Creating backend APIs with Feature-Based Component Architecture
  * @llm-rule AVOID: Using without AppKit modules - breaks structured logging and error handling

@@ -1,7 +1,7 @@
 /**
  * Welcome Feature Service - Business logic with AppKit integration
- * @module basicapp-test/welcome-service
- * @file basicapp-test/src/api/features/{featureName}/{featureName}.service.ts
+ * @module {{projectName}}/welcome-service
+ * @file {{projectName}}/src/api/features/{featureName}/{featureName}.service.ts
  *
  * @llm-rule WHEN: Need business logic layer with validation, logging, and config
  * @llm-rule AVOID: Direct database calls from routes - always use service layer

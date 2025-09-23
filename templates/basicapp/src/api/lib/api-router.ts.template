@@ -1,7 +1,7 @@
 /**
  * FBCA Auto-Discovery Router
- * @module basicapp-test/api-router
- * @file basicapp-test/src/api/lib/api-router.ts
+ * @module {{projectName}}/api-router
+ * @file {{projectName}}/src/api/lib/api-router.ts
  *
  * @llm-rule WHEN: Need automatic API route discovery based on feature directories
  * @llm-rule AVOID: Manual route registration - defeats FBCA auto-discovery purpose

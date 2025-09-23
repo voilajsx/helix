@@ -9,7 +9,7 @@ GET http://localhost:3000/api/welcome
 
 ### 2. Basic hello (with frontend key)
 GET http://localhost:3000/api/welcome
-X-Frontend-Key: voila_2q27xt6n8vdzofwy2n8x4m
+X-Frontend-Key: {{frontendKey}}
 
 ###
 
@@ -26,4 +26,4 @@ GET http://localhost:3000/health
 
 ### API Info (protected)
 GET http://localhost:3000/api
-X-Frontend-Key: voila_2q27xt6n8vdzofwy2n8x4m
+X-Frontend-Key: {{frontendKey}}

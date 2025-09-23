@@ -1,7 +1,7 @@
 /**
  * Welcome Feature Routes - Express endpoints with AppKit integration
- * @module basicapp-test/welcome-routes
- * @file basicapp-test/src/api/features/{featureName}/{featureName}.route.ts
+ * @module {{projectName}}/welcome-routes
+ * @file {{projectName}}/src/api/features/{featureName}/{featureName}.route.ts
  *
  * @llm-rule WHEN: Need HTTP endpoints for welcome feature with error handling
  * @llm-rule AVOID: Adding routes without asyncRoute wrapper - breaks error handling

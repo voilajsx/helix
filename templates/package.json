@@ -32,6 +32,7 @@
   "dependencies": {
     "@voilajsx/uikit": "latest",
     "@voilajsx/appkit": "latest",
+    "@voilajsx/helix": "latest",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.1",

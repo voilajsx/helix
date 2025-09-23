@@ -27,6 +27,42 @@ const templateType = process.argv[4] || 'basicapp'; // Default to basicapp
 const verbose = process.argv.includes('--verbose');
 
 /**
+ * Process template file with placeholder replacement
+ */
+function processTemplateFile(sourcePath, destPath, projectName, verbose = false) {
+  try {
+    let content = readFileSync(sourcePath, 'utf8');
+
+    // Determine actual project name (use current directory name if projectName is '.')
+    const actualProjectName = projectName === '.' ? process.cwd().split('/').pop() : projectName;
+
+    // Template placeholders and their replacements
+    const replacements = {
+      '{{PROJECT_NAME}}': actualProjectName,
+      '{{projectName}}': actualProjectName,
+      '{{DEFAULT_THEME}}': 'base',
+      '{{DEFAULT_MODE}}': 'light'
+    };
+
+    // Replace all placeholders
+    Object.entries(replacements).forEach(([placeholder, replacement]) => {
+      content = content.replace(new RegExp(placeholder.replace(/[{}]/g, '\\$&'), 'g'), replacement);
+      if (verbose && content.includes(placeholder)) {
+        console.log(`🔍 [DEBUG] Replaced ${placeholder} with ${replacement}`);
+      }
+    });
+
+    // Write processed content to destination
+    writeFileSync(destPath, content);
+
+    if (verbose) console.log(`🔍 [DEBUG] Template processed: ${sourcePath} -> ${destPath}`);
+  } catch (error) {
+    console.error(`❌ Error processing template file ${sourcePath}:`, error.message);
+    throw error;
+  }
+}
+
+/**
  * Convert CommonJS package.json to ESM module
  */
 function convertToESM(packageObj) {
@@ -70,18 +106,18 @@ function copyHelixTemplate(templateType, verbose = false) {
           }
           copyRecursive(sourceItem, destItem);
         } else if (stat.isFile()) {
-          // Skip package.json files to preserve merged version
-          if (item === 'package.json' || item === 'package.json.template') {
-            if (verbose) console.log(`🔍 [DEBUG] Skipped ${item} to preserve merged package.json`);
+          // Process package.json.template, skip regular package.json
+          if (item === 'package.json') {
+            if (verbose) console.log(`🔍 [DEBUG] Skipped ${item} (will use package.json.template instead)`);
             return;
           }
 
-          // Handle .template files
+          // Handle .template files with placeholder processing
           if (item.endsWith('.template')) {
             const destItem = join(destPath, item.replace('.template', ''));
-            copyFileSync(sourceItem, destItem);
+            processTemplateFile(sourceItem, destItem, projectName, verbose);
             filesCopied++;
-            if (verbose) console.log(`🔍 [DEBUG] Copied template file: ${item} -> ${item.replace('.template', '')}`);
+            if (verbose) console.log(`🔍 [DEBUG] Processed template file: ${item} -> ${item.replace('.template', '')}`);
           } else {
             const destItem = join(destPath, item);
             copyFileSync(sourceItem, destItem);
@@ -230,6 +266,7 @@ if (!command) {
 Usage:
   helix create <project-name> [template]  Create new fullstack project
   helix create . [template]               Install in current directory
+  helix start                             Start production server (requires build)
 
 Templates:
   basicapp    Basic app with routing and features (default)
@@ -241,6 +278,7 @@ Examples:
   helix create my-app                    # Create basicapp in my-app/ directory
   helix create my-app basicapp           # Same as above
   helix create . basicapp                # Install basicapp in current directory
+  helix start                           # Start production server after build
 `);
   process.exit(1);
 }
@@ -295,37 +333,16 @@ if (command === 'create') {
   }
 
   try {
-    console.log('📱 Setting up frontend (UIKit)...');
-    if (verbose) console.log('🔍 [DEBUG] Running: npx @voilajsx/uikit@latest create . --fbca --theme base');
+    console.log('🚀 Creating Helix fullstack application...');
+    if (verbose) console.log('🔍 [DEBUG] Copying Helix template files...');
 
-    // Use npx instead of global install to avoid npm conflicts
-    execSync('npx @voilajsx/uikit@latest create . --fbca --theme base', { stdio: verbose ? 'inherit' : 'pipe' });
-    if (verbose) console.log('🔍 [DEBUG] UIKit setup completed');
-
-    console.log('🔧 Setting up backend (AppKit)...');
-    if (verbose) console.log('🔍 [DEBUG] Running: npx @voilajsx/appkit@latest generate app');
-
-    // Use npx instead of global install to avoid npm conflicts
-    execSync('npx @voilajsx/appkit@latest generate app', { stdio: verbose ? 'inherit' : 'pipe' });
-    if (verbose) console.log('🔍 [DEBUG] AppKit setup completed');
-
-    console.log('🔄 Configuring fullstack integration...');
-
-    // Now merge the Helix fullstack template with the generated package.json
-    await mergeHelixPackageJson(verbose);
+    // Copy complete Helix template (includes both frontend and backend)
+    copyHelixTemplate(templateType, verbose);
 
     console.log('🎉 Installing dependencies...');
     if (verbose) console.log('🔍 [DEBUG] Running: npm install');
     execSync('npm install', { stdio: verbose ? 'inherit' : 'pipe' });
     if (verbose) console.log('🔍 [DEBUG] Dependencies installed');
-
-    // Copy Helix template files to override UIKit defaults (after install)
-    if (verbose) console.log('🔍 [DEBUG] Copying Helix template files...');
-    copyHelixTemplate(templateType, verbose);
-
-    // Add VITE_API_URL to .env for frontend API configuration
-    if (verbose) console.log('🔍 [DEBUG] Adding VITE_API_URL to .env...');
-    addViteApiUrl();
 
     // Clean up unnecessary directories for basicapp
     if (templateType === 'basicapp') {
@@ -349,7 +366,10 @@ if (command === 'create') {
   npm run dev          # Both API (3000) + Web (5173)
   npm run dev:api      # Backend only
   npm run dev:web      # Frontend only
-  npm run dev:fullstack # Unified experience
+
+🏗️ Production:
+  npm run build        # Build for production
+  npm start           # Start production server
 
 💡 Run "npm run dev" to get started!
 `);
@@ -365,11 +385,47 @@ Next steps:
   npm run dev          # Both API (3000) + Web (5173)
   npm run dev:api      # Backend only
   npm run dev:web      # Frontend only
-  npm run dev:fullstack # Unified experience
+
+🏗️ Production:
+  npm run build        # Build for production
+  npm start           # Start production server
 `);
     }
   } catch (error) {
     console.error('❌ Error creating project:', error.message);
+    process.exit(1);
+  }
+} else if (command === 'start') {
+  console.log('🔍 Checking build files...');
+
+  const distDir = './dist';
+  const apiServerPath = join(distDir, 'api/server.js');
+  const webIndexPath = join(distDir, 'index.html');
+
+  if (!existsSync(distDir)) {
+    console.error('❌ Build not found! Please run "npm run build" first.');
+    console.log('💡 Run: npm run build');
+    process.exit(1);
+  }
+
+  if (!existsSync(apiServerPath)) {
+    console.error('❌ API build not found! Backend server missing.');
+    console.log('💡 Run: npm run build:api');
+    process.exit(1);
+  }
+
+  if (!existsSync(webIndexPath)) {
+    console.error('❌ Web build not found! Frontend build missing.');
+    console.log('💡 Run: npm run build:web');
+    process.exit(1);
+  }
+
+  console.log('✅ Build files found. Starting production server...');
+
+  try {
+    execSync('npm run start:api', { stdio: 'inherit' });
+  } catch (error) {
+    console.error('❌ Error starting server:', error.message);
     process.exit(1);
   }
 } else {

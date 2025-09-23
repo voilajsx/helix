@@ -13,7 +13,7 @@ export default defineConfig({
   // base: '/', // Uncomment this line to make the default asset loading to '/' rather than relative paths
   plugins: [react(), tailwindcss()],
   root: 'src/web',
-  publicDir: '../../public',
+  publicDir: false, // Disable automatic public dir copying
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "../.."),
@@ -26,11 +26,25 @@ export default defineConfig({
   build: {
     outDir: '../../dist',
     sourcemap: true,
+    emptyOutDir: false, // Don't clear dist since API files are also there
+    assetsDir: 'assets', // Put all assets in assets/ subdirectory
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           uikit: ['@voilajsx/uikit']
+        },
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          // Put public assets (favicon, images) in public/ subdirectory
+          const nameParts = assetInfo.name?.split('.');
+          const extType = nameParts ? nameParts[nameParts.length - 1] : '';
+          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) {
+            return 'public/[name]-[hash].[ext]';
+          }
+          // Put CSS and other assets in assets/
+          return 'assets/[name]-[hash].[ext]';
         }
       }
     }
