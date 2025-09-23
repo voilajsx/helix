@@ -273,15 +273,13 @@ if (command === 'create') {
   try {
     console.log('📱 Setting up frontend (UIKit)...');
 
-    // Install UIKit globally and create FBCA frontend (suppress output)
-    execSync('npm install -g @voilajsx/uikit > /dev/null 2>&1 || npm install -g @voilajsx/uikit', { stdio: 'pipe' });
-    execSync('uikit create . --fbca --theme base', { stdio: 'pipe' });
+    // Use npx instead of global install to avoid npm conflicts
+    execSync('npx @voilajsx/uikit@latest create . --fbca --theme base', { stdio: 'pipe' });
 
     console.log('🔧 Setting up backend (AppKit)...');
 
-    // Install AppKit globally and create backend (suppress output)
-    execSync('npm install -g @voilajsx/appkit > /dev/null 2>&1 || npm install -g @voilajsx/appkit', { stdio: 'pipe' });
-    execSync('appkit generate app', { stdio: 'pipe' });
+    // Use npx instead of global install to avoid npm conflicts
+    execSync('npx @voilajsx/appkit@latest generate app', { stdio: 'pipe' });
 
     console.log('🔄 Configuring fullstack integration...');
 
