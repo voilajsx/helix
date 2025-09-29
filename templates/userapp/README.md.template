@@ -1,6 +1,6 @@
 # {{PROJECT_NAME}}
 
-**A modern React FBCA Application built with @voilajsx/uikit**
+**A modern Full-Stack React FBCA Application with User Management built with @voilajsx/uikit and @voilajsx/appkit**
 
 ## 🚀 Quick Start
 
@@ -8,123 +8,172 @@
 # Install dependencies
 npm install
 
-# Start development server
+# Setup environment
+cp .env.example .env
+# Edit .env with your database configuration
+
+# Database setup
+npx prisma generate
+npx prisma db push
+npm run db:seed
+
+# Start development (both frontend and backend)
 npm run dev
+
+# Or start individually
+npm run dev:web     # Frontend only (localhost:5173)
+npm run dev:api     # Backend only (localhost:3000)
 
 # Build for production
 npm run build
-
-# Preview production build
 npm run preview
 ```
 
-## 🎨 UIKit FBCA Features
+## 🏗️ Full-Stack Architecture
 
-This Feature-Based Component Architecture application is built with [@voilajsx/uikit](https://github.com/voilajsx/uikit) featuring:
+This is a complete full-stack user management application featuring:
 
+### 🎨 **Frontend (React + UIKit)**
 - **37 UI Components** - Forms, tables, navigation, overlays, and more
 - **5 Professional Themes** - Base, Elegant, Metro, Studio, Vivid
 - **5 Layout Systems** - Admin, Auth, Page, Popup, Blank layouts
 - **FBCA Architecture** - Scalable feature-based organization
 - **Theme System** - Light/dark mode with semantic OKLCH colors
-- **TypeScript Support** - Full type safety out of the box
-- **SEO Optimization** - Built-in SEO components and hooks
+- **TypeScript Support** - Full type safety throughout
 
-## 🏗️ Project Structure (FBCA)
+### 🔐 **Backend (Express + AppKit)**
+- **Feature-Based API** - Modular route organization
+- **JWT Authentication** - Secure token-based auth
+- **Role-Based Access Control** - Admin, moderator, user roles
+- **Rate Limiting** - AppKit security protection
+- **Password Security** - 8-character minimum, bcrypt hashing
+- **Email Verification** - Account verification workflow
+- **User Management** - Complete CRUD operations for users
+- **PostgreSQL + Prisma** - Production-ready database setup
+
+### 📊 **Database & Features**
+- **Prisma ORM** - Type-safe database operations
+- **User Model** - Complete user profile with roles/permissions
+- **Authentication Flow** - Login, register, logout, password reset
+- **Email Verification** - Secure account activation
+- **Admin Panel** - User administration interface
+- **Tenant Support** - Multi-tenant ready architecture
+
+## 🗂️ Project Structure (FBCA)
 
 ```
 {{PROJECT_NAME}}/
-├── src/web/
-│   ├── App.tsx             # Main application component
-│   ├── main.tsx            # Application entry point
-│   ├── index.html          # HTML entry point
-│   ├── styles/
-│   │   └── index.css       # Tailwind CSS v4+ and UIKit styles
-│   ├── lib/
-│   │   └── page-router.tsx # Custom router implementation
-│   ├── features/           # Feature-based organization
-│   │   ├── main/           # Main feature
-│   │   │   ├── pages/      # Feature pages
-│   │   │   └── components/ # Feature components
-│   │   ├── auth/           # Authentication feature
-│   │   ├── gallery/        # Gallery feature
-│   │   └── docs/           # Documentation feature
-│   ├── shared/             # Shared components and utilities
-│   │   ├── components/     # Shared components
-│   │   │   ├── Header.tsx  # Navigation header
-│   │   │   ├── Footer.tsx  # Footer component
-│   │   │   ├── SEO.tsx     # SEO component
-│   │   │   └── index.ts    # Component exports
-│   │   └── hooks/          # Shared hooks
-│   │       └── useSEO.ts   # SEO hook
-│   └── utils/
-│       └── asset.ts        # Asset utility for deployment paths
-├── public/                 # Static assets
-├── docs/                   # Documentation guides
-├── package.json            # Dependencies and scripts
-└── README.md              # This file
+├── src/
+│   ├── web/                    # Frontend React app
+│   │   ├── features/          # Feature-based components
+│   │   │   ├── auth/         # Authentication feature
+│   │   │   ├── user/         # User management feature
+│   │   │   └── main/         # Main application pages
+│   │   ├── shared/           # Shared components & utilities
+│   │   ├── lib/              # Core application logic
+│   │   └── styles/           # Global styles & themes
+│   └── api/                   # Backend Express server
+│       ├── features/         # Feature-based API routes
+│       │   ├── auth/        # Authentication endpoints
+│       │   ├── user/        # User management endpoints
+│       │   └── welcome/     # Welcome/health endpoints
+│       └── lib/             # Server utilities & middleware
+├── prisma/                   # Database schema & migrations
+│   ├── schema.prisma        # Database schema
+│   └── seeding/            # Database seed files
+└── docs/                    # Documentation & guides
 ```
 
-## 🎯 Development Commands
+## 🔑 Environment Setup
+
+Copy `.env.example` to `.env` and configure:
+
+```env
+# Database Configuration
+DATABASE_URL="postgresql://username:password@localhost:5432/{{PROJECT_NAME}}"
+
+# JWT Configuration
+JWT_SECRET="your-super-secret-jwt-key-here"
+JWT_EXPIRES_IN="7d"
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# Frontend Configuration
+VITE_API_URL=http://localhost:3000
+```
+
+## 📱 Features Available
+
+### Authentication
+- ✅ User Registration with email verification
+- ✅ Login/Logout with JWT tokens
+- ✅ Password reset functionality
+- ✅ Role-based access control (admin, moderator, user)
+- ✅ Secure password hashing with bcrypt
+
+### User Management
+- ✅ User profile management
+- ✅ Admin user administration
+- ✅ User roles and permissions
+- ✅ Account activation/deactivation
+- ✅ User search and filtering
+
+### UI Components
+- ✅ Responsive authentication forms
+- ✅ User management tables
+- ✅ Admin dashboard
+- ✅ Theme switching (light/dark)
+- ✅ Professional layouts
+
+## 🚀 Development Commands
 
 ```bash
-npm run dev         # Start development server (localhost:5173)
-npm run build       # Build for production
+# Development
+npm run dev          # Start both frontend and backend
+npm run dev:web      # Frontend only (React + Vite)
+npm run dev:api      # Backend only (Express + tsx)
+
+# Database
+npm run db:generate  # Generate Prisma client
+npm run db:push     # Push schema changes to database
+npm run db:reset    # Reset database (dev only)
+npm run db:seed     # Seed database with sample data
+
+# Production
+npm run build       # Build both frontend and backend
+npm run start       # Start production server
 npm run preview     # Preview production build
-npm run deploy:gh   # Deploy to GitHub Pages
+
+# Code Quality
+npm run lint        # ESLint code checking
+npm run typecheck   # TypeScript type checking
 ```
 
-## 🎨 Theme Customization
+## 🎯 Default Admin Account
 
-Change your theme by updating the ThemeProvider in `src/web/main.tsx`:
+After running `npm run db:seed`, you can login with:
+- **Email**: admin@example.com
+- **Password**: admin123
 
-```jsx
-<ThemeProvider theme="elegant" mode="light">
-  <App />
-</ThemeProvider>
-```
+## 📚 Technology Stack
 
-Available themes: `base` | `elegant` | `metro` | `studio` | `vivid`
-Available modes: `light` | `dark`
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
+- **Backend**: Express.js, Node.js, TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT tokens with bcrypt
+- **UI Framework**: @voilajsx/uikit (37+ components)
+- **Backend Framework**: @voilajsx/appkit (FBCA architecture)
+- **Development**: tsx, ESLint, concurrent development
 
-## 📦 Built With
+## 🔗 Key Features
 
-- **[React 19](https://react.dev)** - UI library
-- **[TypeScript](https://typescriptlang.org)** - Type safety
-- **[Vite](https://vitejs.dev)** - Build tool and dev server
-- **[Tailwind CSS v4+](https://tailwindcss.com)** - Utility-first CSS framework
-- **[@voilajsx/uikit](https://github.com/voilajsx/uikit)** - UI components and layouts
-- **[Lucide React](https://lucide.dev)** - Icon library
+1. **Complete User Management System** - Registration, login, profile management
+2. **Admin Panel** - User administration with role management
+3. **Secure Authentication** - JWT tokens, password hashing, email verification
+4. **Modern UI/UX** - Professional themes, responsive design, accessibility
+5. **Production Ready** - TypeScript, error handling, security best practices
+6. **FBCA Architecture** - Scalable, maintainable feature-based structure
 
-## 🏗️ FBCA Architecture
-
-The Feature-Based Component Architecture (FBCA) organizes code by features rather than technical layers:
-
-- **Features** - Self-contained feature modules
-- **Shared** - Reusable components and utilities
-- **Lib** - Custom libraries and utilities
-- **Scalable** - Easy to add new features and maintain
-
-## 🌐 Asset Management
-
-Use the included asset utility for deployment-friendly paths:
-
-```jsx
-import { asset } from '../utils/asset';
-
-// Works in both development and production deployments
-<img src={asset('/images/hero.jpg')} alt="Hero" />
-<link rel="icon" href={asset('/favicon.ico')} />
-```
-
-## 📚 Resources
-
-- **[UIKit Documentation](https://docs.anthropic.com/en/docs/claude-code/claude_code_docs_map.md)** - Complete component reference
-- **[UIKit LLM Guide](./docs/UIKIT_LLM_GUIDE.md)** - Comprehensive usage guide
-- **[React Documentation](https://react.dev)** - React framework guide
-- **[Vite Documentation](https://vitejs.dev)** - Build tool documentation
-- **[FBCA Guide](./docs/QUICKSTART_FBCA.md)** - Feature-based architecture guide
-
----
-
-**Built with ❤️ using [@voilajsx/uikit](https://github.com/voilajsx/uikit)** ✨
+Built with ❤️ using Helix Framework

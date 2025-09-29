@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  email             String    @unique
+  password          String
+  name              String?
+  phone             String?
+  role              String    @default("user")
+  level             String    @default("basic")
+  tenantId          String?
+  isVerified        Boolean   @default(false)
+  isActive          Boolean   @default(true)
+  lastLogin         DateTime?
+  resetToken        String?
+  resetTokenExpiry  DateTime?
+  verificationToken String?
+  verificationExpiry DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([tenantId])  // MANDATORY: AppKit performance index
+  @@map("users")
+}

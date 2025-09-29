@@ -6,7 +6,7 @@ const buildPath = (path: string): string => {
   return `${base}${cleanPath}`;
 };
 
-// Asset path builder (for static assets like images, fonts, etc.)
-export const asset = (path: string): string => {
+// Route path builder (for navigation routes)
+export const route = (path: string): string => {
   return buildPath(path);
 };

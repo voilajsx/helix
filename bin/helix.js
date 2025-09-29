@@ -270,9 +270,7 @@ Usage:
 
 Templates:
   basicapp    Basic app with routing and features (default)
-  welcomeapp  Landing page focused app (coming soon)
-  userapp     User management app (coming soon)
-  todoapp     Todo application (coming soon)
+  userapp     User management with auth, roles, and admin panel
 
 Examples:
   helix create my-app                    # Create basicapp in my-app/ directory
@@ -301,7 +299,7 @@ if (command === 'create') {
   // Check if template exists
   const templatePath = join(__dirname, '../templates', templateType);
   if (!existsSync(templatePath)) {
-    console.error(`❌ Template "${templateType}" is not yet available. Currently available: basicapp`);
+    console.error(`❌ Template "${templateType}" is not yet available. Currently available: basicapp, userapp`);
     process.exit(1);
   }
 
@@ -359,7 +357,29 @@ if (command === 'create') {
     }
 
     if (isCurrentDir) {
-      console.log(`
+      if (templateType === 'userapp') {
+        console.log(`
+✅ Helix ${templateType} installed successfully!
+
+📋 Setup steps:
+  1. cp .env.example .env          # Configure environment
+  2. Edit .env with your database settings
+  3. npx prisma db push           # Setup database
+  4. npm run db:seed             # Add sample data
+
+🚀 Development:
+  npm run dev          # Both API (3000) + Web (5173)
+  npm run dev:api      # Backend only
+  npm run dev:web      # Frontend only
+
+🏗️ Production:
+  npm run build        # Build for production
+  npm start           # Start production server
+
+💡 Default admin login: admin@example.com / admin123
+`);
+      } else {
+        console.log(`
 ✅ Helix ${templateType} installed successfully!
 
 🚀 Development:
@@ -373,8 +393,33 @@ if (command === 'create') {
 
 💡 Run "npm run dev" to get started!
 `);
+      }
     } else {
-      console.log(`
+      if (templateType === 'userapp') {
+        console.log(`
+✅ Helix ${templateType} project ${projectName} created successfully!
+
+Next steps:
+  cd ${projectName}
+  cp .env.example .env             # Configure environment
+  # Edit .env with your database settings
+  npx prisma db push              # Setup database
+  npm run db:seed                # Add sample data
+  npm run dev                    # Start development
+
+🚀 Development options:
+  npm run dev          # Both API (3000) + Web (5173)
+  npm run dev:api      # Backend only
+  npm run dev:web      # Frontend only
+
+🏗️ Production:
+  npm run build        # Build for production
+  npm start           # Start production server
+
+💡 Default admin login: admin@example.com / admin123
+`);
+      } else {
+        console.log(`
 ✅ Helix ${templateType} project ${projectName} created successfully!
 
 Next steps:
@@ -390,6 +435,7 @@ Next steps:
   npm run build        # Build for production
   npm start           # Start production server
 `);
+      }
     }
   } catch (error) {
     console.error('❌ Error creating project:', error.message);
