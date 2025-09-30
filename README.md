@@ -16,6 +16,11 @@ A modern fullstack framework that combines **UIKit** (React frontend) and **AppK
 - 📦 **Zero Configuration** - Convention over configuration approach
 - 🎭 **Multi-Theme Support** - Built-in theme system (base, elegant, metro, studio, vivid)
 
+## 📦 Templates
+
+- **basicapp** - Basic fullstack app with routing and features (default)
+- **userapp** - Complete user management with authentication, roles, admin panel, and database
+
 ## 🚀 Quick Start
 
 ### Installation
@@ -27,22 +32,22 @@ npm install -g @voilajsx/helix
 ### Create New Project
 
 ```bash
-# Create in new directory
+# Basic app (default)
 helix create my-app
 cd my-app
 npm run dev
 
-# Or install in current directory
-mkdir my-project && cd my-project
-helix create .
+# User management app
+helix create my-userapp userapp
+cd my-userapp
+npx prisma db push
+npm run db:seed
 npm run dev
 ```
 
-That's it! Your fullstack app is running with:
-
+Your fullstack app runs on:
 - Frontend: http://localhost:5173
 - Backend: http://localhost:3000
-- API: http://localhost:3000/api
 
 ## 📁 Project Structure
 
@@ -162,38 +167,27 @@ const StatusCheck = () => {
 
 ## 📜 Available Scripts
 
-### Development Workflows
+### Development
 
 ```bash
-# Option 1: Separate development (recommended for most development)
-npm run dev          # API (3000) + Web (5173) - separate ports with colored logs
-npm run dev:api      # Backend only (Express on port 3000)
-npm run dev:web      # Frontend only (Vite on port 5173)
-
-# Option 2: Unified development (for testing integration)
-npm run dev:fullstack # Build frontend + serve through backend (single port)
+npm run dev          # Both API (3000) + Web (5173)
+npm run dev:api      # Backend only
+npm run dev:web      # Frontend only
 ```
 
 ### Production
 
 ```bash
-npm run build      # Build both frontend and backend
-npm start          # Start production server (checks build exists)
-npm run preview    # Build and preview
+npm run build        # Build both frontend and backend
+npm start           # Start production server
 ```
 
-### Development Tips
-
-- **npm run dev**: Best for regular development - API and Web run separately with clear labels
-- **npm run dev:fullstack**: Use when testing full integration or APIs from frontend
-- **npm start**: Now shows helpful error if you forgot to build first
-
-### Linting
+### UserApp Database Commands
 
 ```bash
-npm run lint       # Lint everything
-npm run lint:api   # Lint backend only
-npm run lint:web   # Lint frontend only
+npm run db:generate  # Generate Prisma client
+npm run db:push     # Push schema to database
+npm run db:seed     # Seed with sample data
 ```
 
 ## 🎨 Themes

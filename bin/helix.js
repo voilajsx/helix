@@ -41,7 +41,8 @@ function processTemplateFile(sourcePath, destPath, projectName, verbose = false)
       '{{PROJECT_NAME}}': actualProjectName,
       '{{projectName}}': actualProjectName,
       '{{DEFAULT_THEME}}': 'base',
-      '{{DEFAULT_MODE}}': 'light'
+      '{{DEFAULT_MODE}}': 'light',
+      ...extraReplacements
     };
 
     // Replace all placeholders
@@ -78,7 +79,7 @@ function convertToESM(packageObj) {
 /**
  * Copy Helix template files to the generated project
  */
-function copyHelixTemplate(templateType, verbose = false) {
+function copyHelixTemplate(templateType, verbose = false, extraReplacements = {}) {
   try {
     const templatePath = join(__dirname, '../templates', templateType);
     if (verbose) console.log(`🔍 [DEBUG] Template path: ${templatePath}`);
@@ -136,6 +137,103 @@ function copyHelixTemplate(templateType, verbose = false) {
     console.error('❌ Error copying template files:', error.message);
     if (verbose) console.error('🔍 [DEBUG] Full error:', error);
     throw error;
+  }
+}
+
+/**
+ * Generate cryptographically secure random strings for secrets
+ */
+function generateRandomSecret(prefix = '', length = 32) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = prefix;
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+/**
+ * Create .env file with random values for userapp template
+ */
+function createUserappEnvFile(projectName, verbose = false) {
+  try {
+    const envPath = './.env';
+
+    // Generate random values similar to appkit
+    const jwtSecret = generateRandomSecret('jwt_', 48);
+    const authSecret = generateRandomSecret('auth_', 36);
+    const defaultPassword = generateRandomSecret('', 12);
+    const frontendKey = generateRandomSecret('voila_', 24);
+    const sessionSecret = generateRandomSecret('session_', 32);
+
+    // Create .env content from template
+    const envContent = `# Database Configuration
+# For development, you can use PostgreSQL or SQLite
+# PostgreSQL (recommended for production):
+DATABASE_URL="postgresql://username:password@localhost:5432/${projectName}"
+
+# SQLite (good for development):
+# DATABASE_URL="file:./prisma/dev.db"
+
+# JWT Configuration
+JWT_SECRET="${jwtSecret}"
+JWT_EXPIRES_IN="7d"
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# CORS Configuration
+CORS_ORIGIN="http://localhost:5173"
+
+# Rate Limiting
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Email Configuration (for verification emails)
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USER=your-email@gmail.com
+# SMTP_PASS=your-app-password
+# EMAIL_FROM=noreply@${projectName}.com
+
+# Frontend Configuration (used by Vite)
+# Development: Use localhost
+VITE_API_URL=http://localhost:3000
+# Production: Update this to your deployed API URL (e.g., https://your-app.fly.dev)
+# VITE_API_URL=https://${projectName}.fly.dev
+
+VITE_APP_NAME="${projectName}"
+# Vite Environment Variables (Frontend)
+VITE_FRONTEND_KEY=${frontendKey}
+
+VOILA_AUTH_SECRET=${authSecret}
+
+DEFAULT_USER_PASSWORD=${defaultPassword}
+
+# Security Configuration
+BCRYPT_ROUNDS=12
+PASSWORD_MIN_LENGTH=8
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_TO_FILE=true
+
+# Session Configuration
+SESSION_SECRET="${sessionSecret}"
+SESSION_MAX_AGE=86400000
+`;
+
+    writeFileSync(envPath, envContent);
+    console.log('🔑 Generated .env file with secure random values');
+    if (verbose) {
+      console.log('🔍 [DEBUG] Generated secure secrets for JWT, auth, and passwords');
+    }
+
+  } catch (error) {
+    console.error('⚠️  Could not create .env file:', error.message);
+    if (verbose) console.error('🔍 [DEBUG] Full error:', error);
+    // Don't throw - this is not critical, user can still copy from .env.example
   }
 }
 
@@ -290,7 +388,7 @@ if (command === 'create') {
   }
 
   // Validate template type
-  const validTemplates = ['basicapp', 'welcomeapp', 'userapp', 'todoapp'];
+  const validTemplates = ['basicapp', 'userapp'];
   if (!validTemplates.includes(templateType)) {
     console.error(`❌ Invalid template "${templateType}". Available templates: ${validTemplates.join(', ')}`);
     process.exit(1);
@@ -334,8 +432,21 @@ if (command === 'create') {
     console.log('🚀 Creating Helix fullstack application...');
     if (verbose) console.log('🔍 [DEBUG] Copying Helix template files...');
 
+    // Generate frontend key for userapp template processing
+    let extraReplacements = {};
+    if (templateType === 'userapp') {
+      const frontendKey = generateRandomSecret('voila_', 24);
+      extraReplacements['{{VITE_FRONTEND_KEY}}'] = frontendKey;
+    }
+
     // Copy complete Helix template (includes both frontend and backend)
-    copyHelixTemplate(templateType, verbose);
+    copyHelixTemplate(templateType, verbose, extraReplacements);
+
+    // Create .env file with random values for userapp
+    if (templateType === 'userapp') {
+      const actualProjectName = projectName === '.' ? process.cwd().split('/').pop() : projectName;
+      createUserappEnvFile(actualProjectName, verbose);
+    }
 
     console.log('🎉 Installing dependencies...');
     if (verbose) console.log('🔍 [DEBUG] Running: npm install');
@@ -362,10 +473,9 @@ if (command === 'create') {
 ✅ Helix ${templateType} installed successfully!
 
 📋 Setup steps:
-  1. cp .env.example .env          # Configure environment
-  2. Edit .env with your database settings
-  3. npx prisma db push           # Setup database
-  4. npm run db:seed             # Add sample data
+  1. Edit .env with your database settings (auto-generated with secure secrets)
+  2. npx prisma db push           # Setup database
+  3. npm run db:seed             # Add sample data
 
 🚀 Development:
   npm run dev          # Both API (3000) + Web (5173)
@@ -401,8 +511,7 @@ if (command === 'create') {
 
 Next steps:
   cd ${projectName}
-  cp .env.example .env             # Configure environment
-  # Edit .env with your database settings
+  # Edit .env with your database settings (auto-generated with secure secrets)
   npx prisma db push              # Setup database
   npm run db:seed                # Add sample data
   npm run dev                    # Start development
